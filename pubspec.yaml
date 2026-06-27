@@ -1,0 +1,26 @@
+name: pair_iq
+description: "Pair IQ - 50 stages of progressive memory challenge"
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.3.0
+  audioplayers: ^6.1.0
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/sounds/
