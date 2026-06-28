@@ -1,0 +1,69 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Submit Android App
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+          channel: stable
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Auto-increment version
+        run: |
+          CURRENT_VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //')
+          VERSION_NAME=$(echo "$CURRENT_VERSION" | cut -d+ -f1)
+          BUILD_CODE=$(echo "$CURRENT_VERSION" | cut -d+ -f2)
+          NEW_BUILD_CODE=$((BUILD_CODE + 1))
+          NEW_VERSION="$VERSION_NAME+$NEW_BUILD_CODE"
+          sed -i "s/^version: .*/version: $NEW_VERSION/" pubspec.yaml
+          echo "Bumped version: $CURRENT_VERSION -> $NEW_VERSION"
+
+      - name: Commit version bump
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: bump version [skip ci]" || echo "No changes to commit"
+          git push
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/key.jks
+
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
+        env:
+          ANDROID_KEYSTORE_PATH: android/key.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Upload to Google Play Store
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          packageName: com.rutambh.pairiq
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          whatsNewDirectory: whatsnew/
