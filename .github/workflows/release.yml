@@ -53,7 +53,7 @@ jobs:
       - name: Build Android App Bundle
         run: flutter build appbundle --release
         env:
-          ANDROID_KEYSTORE_PATH: android/key.jks
+          ANDROID_KEYSTORE_PATH: key.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
